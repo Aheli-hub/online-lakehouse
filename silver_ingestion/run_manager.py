@@ -3,8 +3,16 @@ from datetime import datetime
 
 from pyspark.sql import Row
 
-from config import PROJECT_ID
-from config import METADATA_DATASET
+from silver_ingestion.config import (
+    PROJECT_ID,
+    AUDIT_DATASET,
+    PIPELINE_TABLE
+)
+
+from silver_ingestion.logger import get_logger
+
+logger = get_logger()
+
 
 # ==========================================================
 # START PIPELINE
@@ -14,7 +22,7 @@ def start_pipeline(spark):
 
     run_id = str(uuid4())
 
-    data = [
+    rows = [
 
         Row(
 
@@ -22,9 +30,9 @@ def start_pipeline(spark):
 
             pipeline_name="Silver Pipeline",
 
-            start_time=datetime.now(),
+            event_type="START",
 
-            end_time=None,
+            event_time=datetime.utcnow(),
 
             status="RUNNING"
 
@@ -33,28 +41,18 @@ def start_pipeline(spark):
     ]
 
     (
-
-        spark.createDataFrame(data)
-
+        spark.createDataFrame(rows)
         .write
-
         .format("bigquery")
-
         .mode("append")
-
         .option(
-
             "table",
-
-            f"{PROJECT_ID}.{METADATA_DATASET}.pipeline_run"
-
+            PIPELINE_TABLE
         )
-
         .save()
-
     )
 
-    print(f"Run Started : {run_id}")
+    logger.info(f"Pipeline Started : {run_id}")
 
     return run_id
 
@@ -65,15 +63,15 @@ def start_pipeline(spark):
 
 def finish_pipeline(
 
-    spark,
+        spark,
 
-    run_id,
+        run_id,
 
-    status
+        status
 
 ):
 
-    data = [
+    rows = [
 
         Row(
 
@@ -81,9 +79,9 @@ def finish_pipeline(
 
             pipeline_name="Silver Pipeline",
 
-            start_time=None,
+            event_type="END",
 
-            end_time=datetime.now(),
+            event_time=datetime.utcnow(),
 
             status=status
 
@@ -92,25 +90,15 @@ def finish_pipeline(
     ]
 
     (
-
-        spark.createDataFrame(data)
-
+        spark.createDataFrame(rows)
         .write
-
         .format("bigquery")
-
         .mode("append")
-
         .option(
-
             "table",
-
-            f"{PROJECT_ID}.{METADATA_DATASET}.pipeline_run"
-
+            PIPELINE_TABLE
         )
-
         .save()
-
     )
 
-    print(f"Run Finished : {run_id}")
+    logger.info(f"Pipeline Finished : {run_id}")

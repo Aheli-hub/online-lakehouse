@@ -1,72 +1,205 @@
-from spark_session import get_spark
-from logger import get_logger
+from silver_ingestion.spark_session import get_spark
+from silver_ingestion.logger import get_logger
 
-from readers.metadata_reader import (
-    load_silver_config,
-    load_schema_config
+from silver_ingestion.run_manager import (
+    start_pipeline,
+    finish_pipeline
 )
 
-from readers.bronze_reader import read_bronze
+from silver_ingestion.pipeline_summary import (
+    pipeline_summary
+)
 
-from writers.silver_writer import write_silver
+from silver_ingestion.audit.error_logger import log_error
+
+from silver_ingestion.readers.metadata_reader import (
+    load_silver_config,
+    load_schema_config,
+    load_dq_rules
+)
+
+from silver_ingestion.readers.bronze_reader import read_bronze
+
+from silver_ingestion.transformations.transform import (
+    apply_transformations
+)
+
+from silver_ingestion.writers.silver_writer import (
+    write_silver
+)
 
 logger = get_logger()
 
-spark = get_spark()
 
-logger.info("=" * 60)
-logger.info("Silver Pipeline Started")
-logger.info("=" * 60)
+def main():
 
-# Load Metadata
-silver_config = load_silver_config(spark)
+    spark = get_spark()
 
-schema_config = load_schema_config(spark)
+    run_id = start_pipeline(spark)
 
-for cfg in silver_config.collect():
+    logger.info("=" * 60)
+    logger.info("Silver Pipeline Started")
+    logger.info("=" * 60)
 
-    table_name = cfg["table_name"]
+    success_tables = 0
+    failed_tables = 0
+    total_rows = 0
 
-    bronze_path = cfg["bronze_path"]
+    try:
 
-    silver_path = cfg["silver_path"]
+        silver_config = load_silver_config(spark)
 
-    primary_key = cfg["primary_key"]
+        schema_config = load_schema_config(spark)
 
-    load_type = cfg["load_type"]
+        dq_rules = load_dq_rules(spark)
 
-    logger.info(f"Processing : {table_name}")
+        configs = silver_config.collect()
 
-    # Read Bronze
-    df = read_bronze(
+        logger.info(f"Tables to Process : {len(configs)}")
 
-        spark,
+        for cfg in configs:
 
-        bronze_path
+            table_name = cfg["table_name"]
 
-    )
+            logger.info("=" * 60)
+            logger.info(f"Processing Table : {table_name}")
+            logger.info("=" * 60)
 
-    # ------------------------------
-    # Transformations
-    # (Next Phase)
-    # ------------------------------
+            try:
 
-    write_silver(
+                # ----------------------------------------
+                # Read Bronze
+                # ----------------------------------------
 
-        spark=spark,
+                df = read_bronze(
 
-        df=df,
+                    spark,
 
-        silver_path=silver_path,
+                    cfg["bronze_path"]
 
-        load_type=load_type,
+                )
 
-        primary_key=primary_key
+                # ----------------------------------------
+                # Transform
+                # ----------------------------------------
 
-    )
+                df = apply_transformations(
 
-logger.info("=" * 60)
-logger.info("Silver Pipeline Completed")
-logger.info("=" * 60)
+                    df=df,
 
-spark.stop()
+                    table_name=table_name,
+
+                    primary_key=cfg["primary_key"],
+
+                    schema_config=schema_config,
+
+                    dq_rules=dq_rules
+
+                )
+
+                # ----------------------------------------
+                # Write Silver
+                # ----------------------------------------
+
+                rows = write_silver(
+
+                    spark=spark,
+
+                    df=df,
+
+                    silver_path=cfg["silver_path"],
+
+                    load_type=cfg["load_type"],
+
+                    primary_key=cfg["primary_key"]
+
+                )
+
+                total_rows += rows
+
+                success_tables += 1
+
+                logger.info(
+                    f"{table_name} Completed Successfully"
+                )
+
+            except Exception as e:
+
+                failed_tables += 1
+
+                logger.exception(
+                    f"{table_name} Failed"
+                )
+
+                log_error(
+
+                    spark=spark,
+
+                    run_id=run_id,
+
+                    table_name=table_name,
+
+                    error=str(e)
+
+                )
+
+        pipeline_summary(
+
+            total_tables=success_tables + failed_tables,
+
+            success_tables=success_tables,
+
+            failed_tables=failed_tables,
+
+            total_rows=total_rows
+
+        )
+
+        pipeline_status = (
+
+            "SUCCESS"
+
+            if failed_tables == 0
+
+            else "PARTIAL_SUCCESS"
+
+        )
+
+        finish_pipeline(
+
+            spark,
+
+            run_id,
+
+            pipeline_status
+
+        )
+
+    except Exception as e:
+
+        logger.exception("Pipeline Failed")
+
+        finish_pipeline(
+
+            spark,
+
+            run_id,
+
+            "FAILED"
+
+        )
+
+        raise
+
+    finally:
+
+        logger.info("=" * 60)
+        logger.info("Stopping Spark Session")
+        logger.info("=" * 60)
+
+        spark.stop()
+
+
+if __name__ == "__main__":
+
+    main()

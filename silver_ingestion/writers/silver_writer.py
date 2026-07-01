@@ -1,7 +1,13 @@
 from delta.tables import DeltaTable
 
-from config import MERGE_SCHEMA
-from config import OVERWRITE_SCHEMA
+from silver_ingestion.config import (
+    MERGE_SCHEMA,
+    OVERWRITE_SCHEMA
+)
+
+from silver_ingestion.logger import get_logger
+
+logger = get_logger()
 
 # ==========================================================
 # WRITE SILVER DELTA
@@ -17,7 +23,9 @@ def write_silver(
 
 ):
 
-    print(f"Writing Silver : {silver_path}")
+    logger.info(f"Writing Silver : {silver_path}")
+
+    rows_written = df.count()
 
     # ======================================================
     # FIRST LOAD
@@ -45,9 +53,9 @@ def write_silver(
 
         )
 
-        print("Silver Delta Created")
+        logger.info("Silver Delta Created")
 
-        return
+        return rows_written
 
     # ======================================================
     # FULL LOAD
@@ -77,9 +85,9 @@ def write_silver(
 
         )
 
-        print("Silver Overwrite Completed")
+        logger.info("Silver Overwrite Completed")
 
-        return
+        return rows_written
 
     # ======================================================
     # INCREMENTAL MERGE
@@ -98,7 +106,7 @@ def write_silver(
 
             df.alias("source"),
 
-            f"target.{primary_key}=source.{primary_key}"
+            f"target.{primary_key} = source.{primary_key}"
 
         )
 
@@ -110,4 +118,6 @@ def write_silver(
 
     )
 
-    print("Silver Merge Completed")
+    logger.info("Silver Merge Completed")
+
+    return rows_written

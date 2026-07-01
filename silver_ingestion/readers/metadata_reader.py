@@ -1,10 +1,13 @@
 from pyspark.sql.functions import col
 
-from config import SILVER_CONFIG
-from config import SCHEMA_CONFIG
+from silver_ingestion.config import (
+    SILVER_CONFIG_TABLE,
+    SCHEMA_CONFIG_TABLE,
+    DQ_RULES_TABLE
+)
 
 # ==========================================================
-# READ BIGQUERY
+# READ BIGQUERY TABLE
 # ==========================================================
 
 def read_bq(
@@ -32,11 +35,11 @@ def load_silver_config(
 
         read_bq(
             spark,
-            SILVER_CONFIG
+            SILVER_CONFIG_TABLE
         )
 
         .filter(
-            col("active") == True
+            col("active")
         )
 
     )
@@ -54,11 +57,33 @@ def load_schema_config(
 
         read_bq(
             spark,
-            SCHEMA_CONFIG
+            SCHEMA_CONFIG_TABLE
         )
 
         .filter(
-            col("active") == True
+            col("active")
+        )
+
+    )
+
+
+# ==========================================================
+# LOAD DATA QUALITY RULES
+# ==========================================================
+
+def load_dq_rules(
+    spark
+):
+
+    return (
+
+        read_bq(
+            spark,
+            DQ_RULES_TABLE
+        )
+
+        .filter(
+            col("active")
         )
 
     )

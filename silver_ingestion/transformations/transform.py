@@ -5,6 +5,10 @@ from pyspark.sql.functions import (
     current_timestamp
 )
 
+from silver_ingestion.logger import get_logger
+
+logger = get_logger()
+
 # ==========================================================
 # APPLY ALL SILVER TRANSFORMATIONS
 # ==========================================================
@@ -18,9 +22,9 @@ def apply_transformations(
 
 ):
 
-    print("=" * 60)
-    print(f"Applying Transformations : {table_name}")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info(f"Applying Transformations : {table_name}")
+    logger.info("=" * 60)
 
     # ======================================================
     # LOAD SCHEMA METADATA
@@ -38,11 +42,19 @@ def apply_transformations(
 
     )
 
+    if not table_schema:
+
+        logger.warning(
+            f"No schema configuration found for {table_name}"
+        )
+
+        return df
+
     # ======================================================
     # APPLY DATA TYPES
     # ======================================================
 
-    print("Casting Columns...")
+    logger.info("Casting Columns...")
 
     for row in table_schema:
 
@@ -64,7 +76,7 @@ def apply_transformations(
     # TRIM STRING COLUMNS
     # ======================================================
 
-    print("Trimming String Columns...")
+    logger.info("Trimming String Columns...")
 
     for row in table_schema:
 
@@ -94,7 +106,7 @@ def apply_transformations(
     # EMPTY STRING -> NULL
     # ======================================================
 
-    print("Replacing Empty Strings with NULL...")
+    logger.info("Replacing Empty Strings with NULL...")
 
     for row in table_schema:
 
@@ -134,45 +146,43 @@ def apply_transformations(
     # REMOVE NULLS FROM MANDATORY COLUMNS
     # ======================================================
 
-    print("Validating Mandatory Columns...")
+    logger.info("Validating Mandatory Columns...")
 
-    for row in table_schema:
+    mandatory_columns = [
 
-        column_name = row["column_name"]
+        row["column_name"]
 
-        nullable = row["nullable"]
+        for row in table_schema
 
         if (
 
-            column_name in df.columns
+            row["nullable"] == False
 
             and
 
-            nullable == False
+            row["column_name"] in df.columns
 
-        ):
+        )
 
-            before = df.count()
+    ]
 
-            df = df.filter(
+    if mandatory_columns:
 
-                col(column_name).isNotNull()
+        before = df.count()
 
-            )
+        df = df.na.drop(
 
-            after = df.count()
+            subset=mandatory_columns
 
-            removed = before - after
+        )
 
-            if removed > 0:
+        after = df.count()
 
-                print(
+        logger.info(
 
-                    f"{column_name} : "
+            f"Rows Removed (Mandatory NULLs): {before - after}"
 
-                    f"{removed} NULL rows removed"
-
-                )
+        )
 
     # ======================================================
     # REMOVE DUPLICATES
@@ -190,11 +200,17 @@ def apply_transformations(
 
         after = df.count()
 
-        print(
+        logger.info(
 
-            f"Duplicate Rows Removed : "
+            f"Duplicate Rows Removed : {before - after}"
 
-            f"{before-after}"
+        )
+
+    else:
+
+        logger.warning(
+
+            f"Primary Key '{primary_key}' not found."
 
         )
 
@@ -202,7 +218,7 @@ def apply_transformations(
     # ADD AUDIT COLUMN
     # ======================================================
 
-    print("Adding Audit Columns...")
+    logger.info("Adding Audit Columns...")
 
     df = df.withColumn(
 
@@ -213,30 +229,24 @@ def apply_transformations(
     )
 
     # ======================================================
-    # COLUMN ORDER
+    # REORDER COLUMNS
     # ======================================================
 
-    ordered_columns = []
+    ordered_columns = [
 
-    for row in table_schema:
+        row["column_name"]
 
-        column_name = row["column_name"]
+        for row in table_schema
 
-        if column_name in df.columns:
+        if row["column_name"] in df.columns
 
-            ordered_columns.append(
+    ]
 
-                column_name
+    for column in df.columns:
 
-            )
+        if column not in ordered_columns:
 
-    # Add newly created columns
-
-    for c in df.columns:
-
-        if c not in ordered_columns:
-
-            ordered_columns.append(c)
+            ordered_columns.append(column)
 
     df = df.select(
 
@@ -244,6 +254,6 @@ def apply_transformations(
 
     )
 
-    print("Transformation Completed.")
+    logger.info("Transformation Completed.")
 
     return df

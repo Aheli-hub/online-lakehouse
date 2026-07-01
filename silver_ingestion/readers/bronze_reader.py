@@ -1,23 +1,26 @@
+from delta.tables import DeltaTable
+
+from silver_ingestion.logger import get_logger
+
+logger = get_logger()
+
 # ==========================================================
 # BRONZE DELTA READER
 # ==========================================================
-
-from delta.tables import DeltaTable
-
 
 def read_bronze(
     spark,
     bronze_path
 ):
 
-    print(f"Reading Bronze : {bronze_path}")
+    logger.info(f"Reading Bronze : {bronze_path}")
 
     if not DeltaTable.isDeltaTable(
         spark,
         bronze_path
     ):
 
-        raise Exception(
+        raise FileNotFoundError(
             f"Bronze Delta table not found : {bronze_path}"
         )
 
@@ -27,6 +30,6 @@ def read_bronze(
         .load(bronze_path)
     )
 
-    print(f"Rows Read : {df.count()}")
+    logger.info(f"Rows Read : {df.count()}")
 
     return df

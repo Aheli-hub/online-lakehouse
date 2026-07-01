@@ -2,8 +2,14 @@ from datetime import datetime
 
 from pyspark.sql import Row
 
-from config import PROJECT_ID
-from config import METADATA_DATASET
+from silver_ingestion.config import (
+    PROJECT_ID,
+    METADATA_DATASET
+)
+
+from silver_ingestion.logger import get_logger
+
+logger = get_logger()
 
 # ==========================================================
 # ERROR LOGGER
@@ -56,4 +62,7 @@ def log_error(
 
     )
 
-    print("Error Logged")
+    logger.error(
+
+        f"Error Logged : {table_name}"
+    )

@@ -1,25 +1,32 @@
 import logging
+import sys
 
 # ==========================================================
 # LOGGER
 # ==========================================================
 
+LOGGER_NAME = "SilverPipeline"
+
+
 def get_logger():
 
-    logger = logging.getLogger("SilverPipeline")
+    logger = logging.getLogger(LOGGER_NAME)
 
-    if not logger.handlers:
+    if logger.handlers:
+        return logger
 
-        logger.setLevel(logging.INFO)
+    logger.setLevel(logging.INFO)
 
-        formatter = logging.Formatter(
-            "%(asctime)s | %(levelname)s | %(message)s"
-        )
+    formatter = logging.Formatter(
+        "%(asctime)s | %(levelname)-8s | %(message)s"
+    )
 
-        console = logging.StreamHandler()
+    console = logging.StreamHandler(sys.stdout)
 
-        console.setFormatter(formatter)
+    console.setFormatter(formatter)
 
-        logger.addHandler(console)
+    logger.addHandler(console)
+
+    logger.propagate = False
 
     return logger
