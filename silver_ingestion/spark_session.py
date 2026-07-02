@@ -1,4 +1,6 @@
 from pyspark.sql import SparkSession
+from silver_ingestion.config import TEMP_GCS_BUCKET
+
 
 # ==========================================================
 # CREATE SPARK SESSION
@@ -10,7 +12,10 @@ def get_spark():
         SparkSession.builder
         .appName("Silver_Delta_Engine")
 
-        # Delta Lake
+        # BigQuery
+        .config("spark.datasource.bigquery.temporaryGcsBucket", TEMP_GCS_BUCKET)
+
+        # Delta
         .config(
             "spark.sql.extensions",
             "io.delta.sql.DeltaSparkSessionExtension"
@@ -23,29 +28,21 @@ def get_spark():
         .getOrCreate()
     )
 
-    # ======================================================
-    # Spark Configurations
-    # ======================================================
-
-    # Fix Parquet Timestamp(Nanos)
     spark.conf.set(
         "spark.sql.legacy.parquet.nanosAsLong",
         "true"
     )
 
-    # Adaptive Query Execution
     spark.conf.set(
         "spark.sql.adaptive.enabled",
         "true"
     )
 
-    # Dynamic Partition Pruning
     spark.conf.set(
         "spark.sql.optimizer.dynamicPartitionPruning.enabled",
         "true"
     )
 
-    # Shuffle Partitions
     spark.conf.set(
         "spark.sql.shuffle.partitions",
         "200"

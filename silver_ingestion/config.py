@@ -69,3 +69,5 @@ OVERWRITE_SCHEMA = True
 # ==========================================================
 
 PIPELINE_NAME = "Silver Pipeline"
+
+TEMP_GCS_BUCKET = "24online-datalake"
