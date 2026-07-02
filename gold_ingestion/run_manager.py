@@ -4,8 +4,6 @@ from datetime import datetime
 from pyspark.sql import Row
 
 from gold_ingestion.config import (
-    PROJECT_ID,
-    AUDIT_DATASET,
     PIPELINE_RUN_TABLE,
     PIPELINE_NAME
 )
