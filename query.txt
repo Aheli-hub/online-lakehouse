@@ -39,6 +39,24 @@ TRUE
 NULL,
 'FULL',
 TRUE
+),
+(
+    'tblgroup',
+    'gs://24online-datalake/24online-bronze/tblgroup/',
+    'gs://24online-datalake/24online-silver/tblgroup/',
+    'groupid',
+    NULL,
+    'FULL',
+    TRUE
+),
+(
+    'tblpolicy',
+    'gs://24online-datalake/24online-bronze/tblpolicy/',
+    'gs://24online-datalake/24online-silver/tblpolicy/',
+    'policyid',
+    NULL,
+    'FULL',
+    TRUE
 );
 
 CREATE TABLE lakehouse_metadata.schema_config (
@@ -140,6 +158,27 @@ VALUES
 
 ('tblinvdetail','groupid','INTEGER',TRUE,FALSE,TRUE);
 
+-----------------------------------------------------------------------------
+INSERT INTO lakehouse_metadata.schema_config
+(table_name,column_name,data_type,nullable,is_primary_key,active)
+VALUES
+
+('tblpolicy','policyid','INTEGER',FALSE,TRUE,TRUE),
+('tblpolicy','policyname','STRING',TRUE,FALSE,TRUE),
+('tblpolicy','allotedminutes','INTEGER',TRUE,FALSE,TRUE),
+('tblpolicy','isshareminutes','STRING',TRUE,FALSE,TRUE),
+('tblpolicy','expiredays','INTEGER',TRUE,FALSE,TRUE),
+('tblpolicy','policydescription','STRING',TRUE,FALSE,TRUE),
+('tblpolicy','isperiodic','STRING',TRUE,FALSE,TRUE),
+('tblpolicy','periodallowedminutes','INTEGER',TRUE,FALSE,TRUE),
+('tblpolicy','cycle','STRING',TRUE,FALSE,TRUE),
+('tblpolicy','sessionpulse','INTEGER',TRUE,FALSE,TRUE),
+('tblpolicy','policytype','INTEGER',TRUE,FALSE,TRUE),
+('tblpolicy','cycletype','INTEGER',TRUE,FALSE,TRUE),
+('tblpolicy','cycleallottedtime','INTEGER',TRUE,FALSE,TRUE),
+('tblpolicy','allottedunit','INTEGER',TRUE,FALSE,TRUE);
+----------------------------------------------------------------------------
+
 CREATE TABLE lakehouse_metadata.dq_rules (
   table_name STRING,
   rule_name STRING,
@@ -152,3 +191,48 @@ INSERT INTO lakehouse_metadata.dq_rules VALUES
 ('tblinvoice','invoiceid_not_null','invoiceid IS NOT NULL',TRUE),
 
 ('tbluser','userid_not_null','userid IS NOT NULL',TRUE);
+
+
+
+CREATE TABLE IF NOT EXISTS lakehouse_metadata.gold_config (
+
+table_name STRING,
+
+source_tables STRING,
+
+gold_path STRING,
+
+load_type STRING,
+
+active BOOL
+
+);
+
+
+INSERT INTO lakehouse_metadata.gold_config
+(table_name,source_tables,gold_path,load_type,active)
+VALUES
+
+(
+'customer_summary',
+'tbluser,tblgroup,tblpolicy',
+'gs://24online-datalake/24online-gold/customer_summary/',
+'FULL',
+TRUE
+),
+
+(
+'invoice_summary',
+'tblinvoice',
+'gs://24online-datalake/24online-gold/invoice_summary/',
+'INCREMENTAL',
+TRUE
+),
+
+(
+'invoice_detail_summary',
+'tblinvdetail',
+'gs://24online-datalake/24online-gold/invoice_detail_summary/',
+'INCREMENTAL',
+TRUE
+);
