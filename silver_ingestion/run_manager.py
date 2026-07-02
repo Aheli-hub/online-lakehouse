@@ -6,7 +6,8 @@ from pyspark.sql import Row
 from silver_ingestion.config import (
     PROJECT_ID,
     AUDIT_DATASET,
-    PIPELINE_TABLE
+    PIPELINE_RUN_TABLE,
+    PIPELINE_NAME
 )
 
 from silver_ingestion.logger import get_logger
@@ -28,7 +29,7 @@ def start_pipeline(spark):
 
             run_id=run_id,
 
-            pipeline_name="Silver Pipeline",
+            pipeline_name= PIPELINE_NAME,
 
             event_type="START",
 
@@ -47,7 +48,7 @@ def start_pipeline(spark):
         .mode("append")
         .option(
             "table",
-            PIPELINE_TABLE
+            PIPELINE_RUN_TABLE
         )
         .save()
     )
@@ -77,7 +78,7 @@ def finish_pipeline(
 
             run_id=run_id,
 
-            pipeline_name="Silver Pipeline",
+            pipeline_name= PIPELINE_NAME,
 
             event_type="END",
 
@@ -96,7 +97,7 @@ def finish_pipeline(
         .mode("append")
         .option(
             "table",
-            PIPELINE_TABLE
+            PIPELINE_RUN_TABLE
         )
         .save()
     )
