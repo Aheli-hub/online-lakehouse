@@ -18,8 +18,8 @@ def apply_transformations(
     df,
     table_name,
     schema_config,
-    primary_key
-
+    primary_key,
+    dq_rules
 ):
 
     logger.info("=" * 60)

@@ -139,7 +139,7 @@ def main():
 
                     table_name=table_name,
 
-                    error=str(e)
+                    error_message=str(e)
 
                 )
 
