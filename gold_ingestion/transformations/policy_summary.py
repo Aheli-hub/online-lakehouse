@@ -8,7 +8,7 @@ from gold_ingestion.logger import get_logger
 logger = get_logger()
 
 
-def build_policy_summary(spark):
+def policy_summary(spark):
 
     logger.info("Reading tblpolicy...")
 

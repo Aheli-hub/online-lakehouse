@@ -9,7 +9,7 @@ from gold_ingestion.logger import get_logger
 logger = get_logger()
 
 
-def build_customer_summary(spark):
+def customer_summary(spark):
 
     logger.info("Reading tbluser...")
 
