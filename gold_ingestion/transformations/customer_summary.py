@@ -36,16 +36,8 @@ def customer_summary(user_df,group_df,policy_df):
 
             col("u.username"),
 
-            col("u.firstname"),
-
-            col("u.lastname"),
-
             col("u.emailid"),
-
-            col("u.phoneno"),
-
-            col("g.groupid"),
-
+   
             col("g.groupname"),
 
             col("p.policyid"),
