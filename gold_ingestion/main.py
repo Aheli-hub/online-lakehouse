@@ -73,7 +73,9 @@ def main():
 
                     gold_path=cfg["gold_path"],
 
-                    load_type=cfg["load_type"]
+                    load_type=cfg["load_type"],
+
+                    merge_key=cfg["merge_key"]
 
                 )
 

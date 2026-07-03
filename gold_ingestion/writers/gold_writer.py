@@ -24,13 +24,49 @@ def write_gold(
 
     gold_path,
 
-    load_type
+    load_type,
+
+    merge_key
 
 ):
 
     logger.info(f"Writing Gold : {gold_path}")
 
     rows = df.count()
+
+    # ======================================================
+    # FIRST LOAD
+    # ======================================================
+
+    if not DeltaTable.isDeltaTable(
+        spark,
+        gold_path
+    ):
+
+        (
+
+            df.write
+
+            .format(DELTA_FORMAT)
+
+            .mode(WRITE_MODE)
+
+            .option(
+                "mergeSchema",
+                str(MERGE_SCHEMA).lower()
+            )
+
+            .save(gold_path)
+
+        )
+
+        logger.info("Gold Delta Created")
+
+        return rows_written
+
+    # ======================================================
+    # FULL LOAD
+    # ======================================================
 
     if load_type.upper() == "FULL":
 
@@ -50,34 +86,46 @@ def write_gold(
 
             )
 
-            .save(gold_path)
-
-        )
-
-        logger.info("Gold Delta Created")
-
-    else:
-
-        (
-
-            df.write
-
-            .format(DELTA_FORMAT)
-
-            .mode("overwrite")
-
             .option(
-
                 "mergeSchema",
-
                 str(MERGE_SCHEMA).lower()
-
             )
 
             .save(gold_path)
 
         )
 
-        logger.info("Gold Delta Updated")
+        logger.info("Gold Delta Created")
+        return rows
+    # ======================================================
+    # INCREMENTAL MERGE
+    # ======================================================
+
+    delta_table = DeltaTable.forPath(
+        spark,
+        gold_path
+    )
+
+    (
+
+        delta_table.alias("target")
+
+        .merge(
+
+            df.alias("source"),
+
+            f"target.{merge_key} = source.{merge_key}"
+
+        )
+
+        .whenMatchedUpdateAll()
+
+        .whenNotMatchedInsertAll()
+
+        .execute()
+
+    )
+
+    logger.info("Gold Merge Completed")
 
     return rows

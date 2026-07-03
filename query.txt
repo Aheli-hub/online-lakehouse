@@ -236,3 +236,32 @@ TRUE
 'INCREMENTAL',
 TRUE
 );
+
+
+ALTER TABLE `online-lakehouse.lakehouse_metadata.gold_config`
+ADD COLUMN merge_key STRING;
+
+
+UPDATE `online-lakehouse.lakehouse_metadata.gold_config`
+SET merge_key='userid'
+WHERE table_name='customer_summary';
+
+
+UPDATE `online-lakehouse.lakehouse_metadata.gold_config`
+SET merge_key='invoiceid'
+WHERE table_name='invoice_summary';
+
+
+UPDATE `online-lakehouse.lakehouse_metadata.gold_config`
+SET merge_key='invdetailid'
+WHERE table_name='invoice_detail_summary';
+
+
+UPDATE `online-lakehouse.lakehouse_metadata.gold_config`
+SET merge_key='groupid'
+WHERE table_name='group_summary';
+
+
+UPDATE `online-lakehouse.lakehouse_metadata.gold_config`
+SET merge_key='policyid'
+WHERE table_name='policy_summary';
