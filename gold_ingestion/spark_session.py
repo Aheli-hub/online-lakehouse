@@ -1,13 +1,8 @@
 from pyspark.sql import SparkSession
 
-from delta import configure_spark_with_delta_pip
-
 from gold_ingestion.config import (
-
     PROJECT_ID,
-
     TEMP_GCS_BUCKET
-
 )
 
 from gold_ingestion.logger import get_logger
@@ -21,46 +16,47 @@ logger = get_logger()
 
 def get_spark():
 
-    builder = (
-
+    spark = (
         SparkSession.builder
-
         .appName("Gold Pipeline")
 
+        # BigQuery
         .config(
-
-            "spark.sql.extensions",
-
-            "io.delta.sql.DeltaSparkSessionExtension"
-
-        )
-
-        .config(
-
-            "spark.sql.catalog.spark_catalog",
-
-            "org.apache.spark.sql.delta.catalog.DeltaCatalog"
-
-        )
-
-        .config(
-
-            "temporaryGcsBucket",
-
+            "spark.datasource.bigquery.temporaryGcsBucket",
             TEMP_GCS_BUCKET
-
         )
 
+        # Delta
+        .config(
+            "spark.sql.extensions",
+            "io.delta.sql.DeltaSparkSessionExtension"
+        )
+        .config(
+            "spark.sql.catalog.spark_catalog",
+            "org.apache.spark.sql.delta.catalog.DeltaCatalog"
+        )
+
+        .getOrCreate()
     )
 
-    spark = configure_spark_with_delta_pip(
+    spark.conf.set(
+        "spark.sql.legacy.parquet.nanosAsLong",
+        "true"
+    )
 
-        builder
+    spark.conf.set(
+        "spark.sql.adaptive.enabled",
+        "true"
+    )
 
-    ).getOrCreate()
+    spark.conf.set(
+        "spark.sql.optimizer.dynamicPartitionPruning.enabled",
+        "true"
+    )
 
-    spark.sparkContext.setLogLevel("WARN")
-
-    logger.info("Spark Session Created")
+    spark.conf.set(
+        "spark.sql.shuffle.partitions",
+        "200"
+    )
 
     return spark
