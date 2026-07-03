@@ -11,17 +11,7 @@ from gold_ingestion.logger import get_logger
 logger = get_logger()
 
 
-def invoice_detail_summary(spark):
-
-    logger.info("Reading tblinvdetail...")
-
-    detail_df = read_silver_table(
-
-        spark,
-
-        "tblinvdetail"
-
-    )
+def invoice_detail_summary(detail_df):
 
     logger.info("Creating Invoice Detail Summary...")
 

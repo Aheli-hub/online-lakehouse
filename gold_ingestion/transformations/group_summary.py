@@ -8,17 +8,7 @@ from gold_ingestion.logger import get_logger
 logger = get_logger()
 
 
-def group_summary(spark):
-
-    logger.info("Reading tblgroup...")
-
-    group_df = read_silver_table(
-
-        spark,
-
-        "tblgroup"
-
-    )
+def group_summary(group_df):
 
     logger.info("Creating Group Summary...")
 

@@ -73,7 +73,7 @@ def apply_transformations(
 
         return customer_summary(
 
-            dfs["tbluser"]
+            dfs["tbluser"],dfs["tblgroup"],dfs["tblpolicy"]
 
         )
 

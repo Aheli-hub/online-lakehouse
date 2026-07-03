@@ -9,29 +9,9 @@ from gold_ingestion.logger import get_logger
 logger = get_logger()
 
 
-def customer_summary(spark):
+def customer_summary(user_df,group_df,policy_df):
 
-    logger.info("Reading tbluser...")
-
-    user_df = read_silver_table(
-        spark,
-        "tbluser"
-    )
-
-    logger.info("Reading tblgroup...")
-
-    group_df = read_silver_table(
-        spark,
-        "tblgroup"
-    )
-
-    logger.info("Reading tblpolicy...")
-
-    policy_df = read_silver_table(
-        spark,
-        "tblpolicy"
-    )
-
+ 
     logger.info("Joining Customer Tables...")
 
     df = (
